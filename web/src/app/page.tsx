@@ -36,6 +36,61 @@ function formatDate(value: string): string {
   return date.toLocaleString();
 }
 
+const demoStats = {
+  activeHouses: 6,
+  studentsReached: 1842,
+  recentPollResponses: 376,
+};
+
+const demoBroadcasts = [
+  {
+    id: 'demo-1',
+    content: 'Reminder: Welfare Pack collection is tomorrow, 10:00 AM to 4:00 PM at MPH. Bring your matric card for verification.',
+    mediaUrl: null,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    type: 'Announcement' as const,
+  },
+  {
+    id: 'demo-2',
+    content: 'Interest Check: Would your house join a cross-house networking tea session next Friday evening?',
+    mediaUrl: null,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
+    type: 'Poll' as const,
+  },
+  {
+    id: 'demo-3',
+    content: 'Applications are now open for Orientation Group Leaders. Deadline: Sunday 11:59 PM.',
+    mediaUrl: null,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+    type: 'Announcement' as const,
+  },
+];
+
+const demoPollSummaries = [
+  {
+    pollId: 'demo-poll-1',
+    question: 'Preferred timing for House Study Night?',
+    totalVotes: 198,
+    leadingOption: { text: '8:00 PM - 10:00 PM', votes: 92 },
+    options: [
+      { optionIndex: 0, text: '6:00 PM - 8:00 PM', votes: 51 },
+      { optionIndex: 1, text: '8:00 PM - 10:00 PM', votes: 92 },
+      { optionIndex: 2, text: 'Weekend Afternoon', votes: 55 },
+    ],
+  },
+  {
+    pollId: 'demo-poll-2',
+    question: 'Preferred venue for Inter-House Mixer?',
+    totalVotes: 178,
+    leadingOption: { text: 'College Courtyard', votes: 74 },
+    options: [
+      { optionIndex: 0, text: 'College Courtyard', votes: 74 },
+      { optionIndex: 1, text: 'Dining Hall Annex', votes: 63 },
+      { optionIndex: 2, text: 'Virtual Session', votes: 41 },
+    ],
+  },
+];
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,11 +128,20 @@ export default function Dashboard() {
     return () => controller.abort();
   }, []);
 
+  const hasLiveContent =
+    (data?.recentBroadcasts?.length ?? 0) > 0 ||
+    (data?.pollSummaries?.length ?? 0) > 0 ||
+    (data?.stats.activeHouses ?? 0) > 0;
+  const showDemoContent = !loading && !error && !hasLiveContent;
+
   const stats = [
-    { label: 'Active Houses', value: String(data?.stats.activeHouses ?? 0) },
-    { label: 'Students Reached', value: String(data?.stats.studentsReached ?? 0) },
-    { label: 'Recent Poll Responses', value: String(data?.stats.recentPollResponses ?? 0) },
+    { label: 'Active Houses', value: String(showDemoContent ? demoStats.activeHouses : data?.stats.activeHouses ?? 0) },
+    { label: 'Students Reached', value: String(showDemoContent ? demoStats.studentsReached : data?.stats.studentsReached ?? 0) },
+    { label: 'Recent Poll Responses', value: String(showDemoContent ? demoStats.recentPollResponses : data?.stats.recentPollResponses ?? 0) },
   ];
+
+  const visibleBroadcasts = showDemoContent ? demoBroadcasts : data?.recentBroadcasts ?? [];
+  const visiblePollSummaries = showDemoContent ? demoPollSummaries : data?.pollSummaries ?? [];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -110,6 +174,12 @@ export default function Dashboard() {
         </div>
       )}
 
+      {showDemoContent && (
+        <div className="rounded-xl border border-blue-300/30 bg-blue-500/10 px-4 py-3 text-sm text-blue-100">
+          Demo mode: showing sample broadcasts and poll results for presentation.
+        </div>
+      )}
+
       <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
         <div className="p-6 pb-4 border-b border-border">
           <h3 className="font-semibold leading-none tracking-tight">Recent Broadcasts</h3>
@@ -120,7 +190,7 @@ export default function Dashboard() {
           {error && <p className="p-6 text-sm text-red-300">{error}</p>}
           {!loading && !error && (
             <div className="divide-y divide-border">
-              {(data?.recentBroadcasts ?? []).map((b) => (
+              {visibleBroadcasts.map((b) => (
                 <div key={b.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-secondary/20 transition-colors">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -133,7 +203,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
-              {(data?.recentBroadcasts?.length ?? 0) === 0 && (
+              {visibleBroadcasts.length === 0 && (
                 <p className="p-6 text-sm text-muted-foreground">No broadcasts yet.</p>
               )}
             </div>
@@ -148,11 +218,11 @@ export default function Dashboard() {
         </div>
         <div className="divide-y divide-border">
           {loading && <p className="p-6 text-sm text-muted-foreground">Loading poll summaries...</p>}
-          {!loading && !error && (data?.pollSummaries?.length ?? 0) === 0 && (
+          {!loading && !error && visiblePollSummaries.length === 0 && (
             <p className="p-6 text-sm text-muted-foreground">No poll data available yet.</p>
           )}
           {!loading && !error &&
-            (data?.pollSummaries ?? []).map((poll) => (
+            visiblePollSummaries.map((poll) => (
               <div key={poll.pollId} className="p-6 space-y-3">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                   <p className="font-medium">{poll.question}</p>

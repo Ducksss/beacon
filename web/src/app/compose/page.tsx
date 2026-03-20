@@ -22,6 +22,18 @@ export default function ComposePage() {
   const [error, setError] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
 
+  const applyAnnouncementTemplate = () => {
+    setType('message');
+    setContent('Reminder: Welfare Pack collection is tomorrow, 10:00 AM to 4:00 PM at MPH. Please bring your matric card for verification.');
+    setMediaUrl('https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200&q=80');
+  };
+
+  const applyPollTemplate = () => {
+    setType('poll');
+    setContent('Interest Check: Which timeslot works best for the Inter-House Networking Session next Friday?');
+    setOptions(['6:00 PM - 7:30 PM', '7:30 PM - 9:00 PM', 'I cannot attend']);
+  };
+
   const activeHouses = useMemo(
     () => houses.filter((house) => house.status === 'active'),
     [houses]
@@ -127,6 +139,20 @@ export default function ComposePage() {
         </Link>
         <h1 className="text-3xl font-bold tracking-tight">New Broadcast</h1>
         <p className="text-muted-foreground mt-1">Send an announcement or poll to all connected House Chats.</p>
+        <div className="flex flex-wrap items-center gap-2 mt-4">
+          <button
+            onClick={applyAnnouncementTemplate}
+            className="inline-flex items-center rounded-md border border-input px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+          >
+            Use Announcement Template
+          </button>
+          <button
+            onClick={applyPollTemplate}
+            className="inline-flex items-center rounded-md border border-input px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
+          >
+            Use Poll Template
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm overflow-hidden">
@@ -190,7 +216,7 @@ export default function ComposePage() {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               className="flex min-h-30 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:border-muted-foreground/50 transition-colors disabled:cursor-not-allowed disabled:opacity-50 resize-y"
-              placeholder={type === "message" ? "Type your announcement here..." : "e.g. What time should we start the RC event?"}
+              placeholder={type === "message" ? "e.g. Reminder: Welfare Pack collection is tomorrow at MPH, 10:00 AM to 4:00 PM." : "e.g. Which timeslot works best for Friday's Inter-House Networking Session?"}
             />
           </div>
 
@@ -204,7 +230,7 @@ export default function ComposePage() {
                       value={opt}
                       onChange={(e) => updateOption(i, e.target.value)}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors hover:border-muted-foreground/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                      placeholder={`Option ${i + 1}`}
+                      placeholder={`Option ${i + 1} (e.g. 7:30 PM - 9:00 PM)`}
                     />
                   </div>
                 ))}
@@ -226,7 +252,7 @@ export default function ComposePage() {
                 value={mediaUrl}
                 onChange={(event) => setMediaUrl(event.target.value)}
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors hover:border-muted-foreground/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="https://..."
+                placeholder="https://example.com/welfare-pack-poster.jpg"
               />
               <p className="text-xs text-muted-foreground">Provide a publicly accessible image URL for infographic broadcasts.</p>
             </div>
