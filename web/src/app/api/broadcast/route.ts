@@ -12,6 +12,7 @@ type BroadcastPayload = {
   houseChatIds?: number[];
   sendToAll?: boolean;
   options?: string[];
+  categoryId?: string | null;
 };
 
 type House = {
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
     const { data: broadcast, error: broadcastError } = await supabase
       .from('broadcasts')
       .insert({
+        category_id: payload.categoryId || null,
         content: payload.content.trim(),
         media_url: payload.mediaUrl?.trim() || null,
       })
@@ -171,11 +173,25 @@ export async function POST(request: Request) {
 
     const messageResults = await Promise.allSettled(
       targetHouses.map(async (house) => {
+        let telegramRes;
         if (payload.mediaUrl?.trim()) {
-          await sendPhoto(house.chat_id, payload.mediaUrl.trim(), payload.content.trim());
+          telegramRes = await sendPhoto(house.chat_id, payload.mediaUrl.trim(), payload.content.trim());
         } else {
-          await sendMessage(house.chat_id, payload.content.trim());
+          telegramRes = await sendMessage(house.chat_id, payload.content.trim());
         }
+
+        const messageId = telegramRes.result?.message_id;
+        if (!messageId) {
+          throw new Error(`Missing message identifier for chat ${house.chat_id}`);
+        }
+
+        const { error: instanceError } = await supabase.from('telegram_messages').insert({
+          broadcast_id: broadcast.id,
+          chat_id: house.chat_id,
+          message_id: messageId,
+        });
+
+        if (instanceError) throw instanceError;
 
         return house.chat_id;
       })

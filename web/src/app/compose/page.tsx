@@ -9,15 +9,24 @@ type House = {
   status: string;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  color: string;
+};
+
 export default function ComposePage() {
   const [type, setType] = useState<"message" | "poll">("message");
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
   const [mediaUrl, setMediaUrl] = useState("");
   const [houses, setHouses] = useState<House[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState<string>("");
   const [sendToAll, setSendToAll] = useState(true);
   const [selectedHouseIds, setSelectedHouseIds] = useState<number[]>([]);
   const [loadingHouses, setLoadingHouses] = useState(true);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -42,30 +51,33 @@ export default function ComposePage() {
   useEffect(() => {
     const controller = new AbortController();
 
-    async function loadHouses() {
+    async function loadData() {
       setLoadingHouses(true);
+      setLoadingCategories(true);
       try {
-        const response = await fetch('/api/houses', {
-          signal: controller.signal,
-          cache: 'no-store',
-        });
+        const [housesRes, categoriesRes] = await Promise.all([
+          fetch('/api/houses', { signal: controller.signal, cache: 'no-store' }),
+          fetch('/api/categories', { signal: controller.signal, cache: 'no-store' })
+        ]);
 
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to load houses');
-        }
+        const housesData = await housesRes.json();
+        if (!housesRes.ok) throw new Error(housesData.error || 'Failed to load houses');
+        setHouses(housesData.houses ?? []);
 
-        setHouses(data.houses ?? []);
+        const categoriesData = await categoriesRes.json();
+        if (categoriesRes.ok) setCategories(categoriesData.categories ?? []);
+
       } catch (fetchError) {
         if ((fetchError as Error).name !== 'AbortError') {
-          setError((fetchError as Error).message || 'Failed to load houses');
+          setError((fetchError as Error).message || 'Failed to load dependencies');
         }
       } finally {
         setLoadingHouses(false);
+        setLoadingCategories(false);
       }
     }
 
-    loadHouses();
+    loadData();
     return () => controller.abort();
   }, []);
   
@@ -100,6 +112,7 @@ export default function ComposePage() {
           content,
           options: type === 'poll' ? cleanOptions : undefined,
           mediaUrl: type === 'message' ? mediaUrl : undefined,
+          categoryId: categoryId || undefined,
           sendToAll,
           houseChatIds: sendToAll ? undefined : selectedHouseIds,
         }),
@@ -118,6 +131,7 @@ export default function ComposePage() {
       setContent('');
       setMediaUrl('');
       setOptions(['', '']);
+      setCategoryId('');
     } catch (submitError) {
       setError((submitError as Error).message || 'Failed to send broadcast');
     } finally {
@@ -137,8 +151,16 @@ export default function ComposePage() {
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m15 18-6-6 6-6"/></svg>
           Back to Dashboard
         </Link>
-        <h1 className="text-3xl font-bold tracking-tight">New Broadcast</h1>
-        <p className="text-muted-foreground mt-1">Send an announcement or poll to all connected House Chats.</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">New Broadcast</h1>
+            <p className="text-muted-foreground mt-1">Send an announcement or poll to all connected House Chats.</p>
+          </div>
+          <Link href="/settings/categories" className="inline-flex items-center text-sm font-medium text-primary hover:text-primary/80 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Manage Categories
+          </Link>
+        </div>
         <div className="flex flex-wrap items-center gap-2 mt-4">
           <button
             onClick={applyAnnouncementTemplate}
@@ -205,6 +227,24 @@ export default function ComposePage() {
               )}
 
               {loadingHouses && <p className="text-xs text-muted-foreground">Loading house chats...</p>}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium leading-none">Category (Optional)</label>
+            <div className="relative">
+              <select 
+                value={categoryId} 
+                onChange={e => setCategoryId(e.target.value)}
+                disabled={loadingCategories}
+                className="flex h-10 w-full appearance-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors hover:border-muted-foreground/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">-- No Category --</option>
+                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
             </div>
           </div>
 

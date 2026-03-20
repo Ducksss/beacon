@@ -56,7 +56,8 @@ Beacon bridges the gap between the College Student Committee (CSC) and individua
 
 **Value Proposition:**
 * **Centralized Communication, Decentralized Outreach:** Allows the CSC to broadcast messages from a single interface while reaching students directly in their decentralized House Chats.
-* **Stronger Coordination:** Enhances alignment and communication efficiency between the CSC and the various Houses.
+* **Smart Organization & Filtering:** Tag broadcasts with custom, dynamic categories (like Events, Elections, Admin) to keep your communication history clean and easily searchable.
+* **Live Telegram Sync:** Made a typo? Edit text announcements directly from the dashboard and watch them update live across all Telegram group chats.
 * **Standardized Message Flow:** Ensures that announcements, infographics, and polls are delivered consistently and professionally across all channels.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -113,15 +114,21 @@ You need Node.js installed, as well as a Supabase project and a Telegram Bot Tok
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Beacon comes with two core pages tailored for the CSC workflow:
+Beacon comes with powerful core pages tailored for the CSC workflow:
 
-**1. The Dashboard**
-Monitor active houses, reach statistics, and recent broadcasts centrally.
-![Dashboard Screenshot](images/dashboard.png)
+**1. The Dashboard & Live Editing**
+Monitor active houses, reach statistics, and recent broadcasts centrally. Filter your history by custom categories, or quickly edit past announcements to sync corrections to Telegram.
+
+![Dynamic Workflow Showcase](images/showcase.webp)
 
 **2. The Compose Interface**
-Draft rich-text announcements or interactive "Interest-Check" Polls with dynamic options.
+Draft rich-text announcements or interactive "Interest-Check" Polls with dynamic options. Tag them with categories before sending to keep your feed organized.
 ![Compose Screenshot](images/compose.png)
+
+![Category Tagging in Action](images/dropdown.png)
+
+**3. Category Management**
+Create and manage your own custom tracking tags (with colors) to easily distinguish between Elections, Events, and Admin alerts.
 
 _For more examples, please refer to the [Documentation](https://example.com)_
 
@@ -133,6 +140,8 @@ _For more examples, please refer to the [Documentation](https://example.com)_
 - [x] Integrate standard text announcements
 - [x] Add multi-option polling support
 - [x] Provide unified analytics view
+- [x] Dynamic broadcast categorization & filtering
+- [x] Inline Telegram message editing from dashboard
 - [ ] Add role-based access control (RBAC)
 - [ ] Implement advanced message scheduling
 

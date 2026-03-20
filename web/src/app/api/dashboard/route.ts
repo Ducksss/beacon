@@ -7,6 +7,8 @@ type BroadcastRow = {
   content: string | null;
   media_url: string | null;
   created_at: string;
+  category_id?: string | null;
+  categories?: { id: string; name: string; color: string; } | { id: string; name: string; color: string; }[] | null;
 };
 
 type PollRow = {
@@ -46,17 +48,25 @@ export async function GET() {
       });
     }
 
-    const [{ data: houses, error: housesError }, { data: broadcasts, error: broadcastsError }, { data: votesByUser, error: votesByUserError }, { count: totalResponses, error: totalResponsesError }] = await Promise.all([
+    const [
+      { data: houses, error: housesError },
+      { data: broadcasts, error: broadcastsError },
+      { data: votesByUser, error: votesByUserError },
+      { count: totalResponses, error: totalResponsesError },
+      { data: categories, error: categoriesError }
+    ] = await Promise.all([
       supabase.from('houses').select('chat_id,title,status').eq('status', 'active').order('title', { ascending: true }),
-      supabase.from('broadcasts').select('id,content,media_url,created_at').order('created_at', { ascending: false }).limit(10),
+      supabase.from('broadcasts').select('id,content,media_url,created_at,category_id,categories(id,name,color)').order('created_at', { ascending: false }).limit(20),
       supabase.from('votes').select('user_id'),
       supabase.from('votes').select('*', { count: 'exact', head: true }),
+      supabase.from('categories').select('*').order('name'),
     ]);
 
     if (housesError) throw housesError;
     if (broadcastsError) throw broadcastsError;
     if (votesByUserError) throw votesByUserError;
     if (totalResponsesError) throw totalResponsesError;
+    if (categoriesError) throw categoriesError;
 
     const broadcastRows = (broadcasts ?? []) as BroadcastRow[];
     const broadcastIds = broadcastRows.map((item) => item.id);
@@ -79,6 +89,7 @@ export async function GET() {
       content: item.content || 'Untitled broadcast',
       mediaUrl: item.media_url,
       createdAt: item.created_at,
+      category: Array.isArray(item.categories) ? item.categories[0] : (item.categories || null),
       type: pollByBroadcastId.has(item.id) ? 'Poll' : 'Announcement',
     }));
 
@@ -133,6 +144,7 @@ export async function GET() {
       activeHouses: houses ?? [],
       recentBroadcasts,
       pollSummaries,
+      categories: categories ?? [],
     });
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -143,6 +155,7 @@ export async function GET() {
           recentPollResponses: 0,
         },
         activeHouses: [],
+        categories: [],
         recentBroadcasts: [],
         pollSummaries: [],
         warning: missingSchemaMessage(),

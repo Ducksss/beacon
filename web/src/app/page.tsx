@@ -9,12 +9,14 @@ type DashboardData = {
     studentsReached: number;
     recentPollResponses: number;
   };
+  categories?: Array<{ id: string; name: string; color: string; }>;
   recentBroadcasts: Array<{
     id: string;
     content: string;
     mediaUrl: string | null;
     createdAt: string;
     type: 'Poll' | 'Announcement';
+    category?: { id: string; name: string; color: string; } | null;
   }>;
   pollSummaries: Array<{
     pollId: string;
@@ -42,7 +44,7 @@ const demoStats = {
   recentPollResponses: 376,
 };
 
-const demoBroadcasts = [
+const demoBroadcasts: DashboardData['recentBroadcasts'] = [
   {
     id: 'demo-1',
     content: 'Reminder: Welfare Pack collection is tomorrow, 10:00 AM to 4:00 PM at MPH. Bring your matric card for verification.',
@@ -95,6 +97,11 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -140,7 +147,56 @@ export default function Dashboard() {
     { label: 'Recent Poll Responses', value: String(showDemoContent ? demoStats.recentPollResponses : data?.stats.recentPollResponses ?? 0) },
   ];
 
-  const visibleBroadcasts = showDemoContent ? demoBroadcasts : data?.recentBroadcasts ?? [];
+  const handleEditClick = (broadcast: any) => {
+    setEditingId(broadcast.id);
+    setEditContent(broadcast.content);
+    setEditCategoryId(broadcast.category?.id || '');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditContent('');
+    setEditCategoryId('');
+  };
+
+  const handleSaveEdit = async (id: string, isPoll: boolean) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/broadcast/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categoryId: editCategoryId || null,
+          content: !isPoll ? editContent : undefined,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      // Optimistic update
+      setData((prev) => {
+        if (!prev) return prev;
+        const newCat = prev.categories?.find(c => c.id === editCategoryId) || null;
+        return {
+          ...prev,
+          recentBroadcasts: prev.recentBroadcasts.map(b => 
+            b.id === id ? { ...b, category: newCat, content: !isPoll ? editContent : b.content } : b
+          )
+        };
+      });
+      setEditingId(null);
+    } catch (err: any) {
+      alert(`Failed to save: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const rawBroadcasts = showDemoContent ? demoBroadcasts : data?.recentBroadcasts ?? [];
+  const visibleBroadcasts = selectedCategory
+    ? rawBroadcasts.filter(b => b.category?.id === selectedCategory)
+    : rawBroadcasts;
+
   const visiblePollSummaries = showDemoContent ? demoPollSummaries : data?.pollSummaries ?? [];
 
   return (
@@ -150,13 +206,21 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
           <p className="text-muted-foreground mt-1">Monitor your central outreach and engagement.</p>
         </div>
-        <Link 
-          href="/compose" 
-          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-          New Broadcast
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link 
+            href="/settings/categories" 
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
+          >
+            Manage Categories
+          </Link>
+          <Link 
+            href="/compose" 
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            New Broadcast
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -181,9 +245,31 @@ export default function Dashboard() {
       )}
 
       <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
-        <div className="p-6 pb-4 border-b border-border">
-          <h3 className="font-semibold leading-none tracking-tight">Recent Broadcasts</h3>
-          <p className="text-sm text-muted-foreground mt-1.5">Your latest announcements and polls.</p>
+        <div className="p-6 pb-4 border-b border-border space-y-4">
+          <div>
+            <h3 className="font-semibold leading-none tracking-tight">Recent Broadcasts</h3>
+            <p className="text-sm text-muted-foreground mt-1.5">Your latest announcements and polls.</p>
+          </div>
+          {data?.categories && data.categories.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`inline-flex items-center rounded-md px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${!selectedCategory ? 'bg-primary text-primary-foreground shadow hover:bg-primary/80' : 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground'}`}
+              >
+                All
+              </button>
+              {data.categories.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCategory(c.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border ${selectedCategory === c.id ? 'bg-secondary text-secondary-foreground shadow-sm' : 'border-input bg-transparent hover:bg-accent hover:text-accent-foreground'}`}
+                >
+                  <div className="size-2 rounded-full" style={{ backgroundColor: c.color }} />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="p-0">
           {loading && <p className="p-6 text-sm text-muted-foreground">Loading dashboard data...</p>}
@@ -191,16 +277,76 @@ export default function Dashboard() {
           {!loading && !error && (
             <div className="divide-y divide-border">
               {visibleBroadcasts.map((b) => (
-                <div key={b.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-secondary/20 transition-colors">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground">
-                        {b.type}
-                      </span>
-                      <span className="text-sm text-muted-foreground">{formatDate(b.createdAt)}</span>
+                <div key={b.id} className="p-6 hover:bg-secondary/20 transition-colors">
+                  {editingId === b.id ? (
+                    <div className="space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Category</label>
+                        <select
+                          value={editCategoryId}
+                          onChange={(e) => setEditCategoryId(e.target.value)}
+                          className="flex h-9 w-full sm:w-[300px] rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <option value="">-- No Category --</option>
+                          {data?.categories?.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Content</label>
+                        <textarea
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          disabled={b.type === 'Poll'}
+                          className="flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        {b.type === 'Poll' && <p className="text-xs text-muted-foreground">Poll text cannot be modified on Telegram.</p>}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSaveEdit(b.id, b.type === 'Poll')}
+                          disabled={isSaving}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring bg-primary text-primary-foreground shadow hover:bg-primary/90 h-8 px-4 disabled:opacity-50"
+                        >
+                          {isSaving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isSaving}
+                          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-8 px-4"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <p className="font-medium">{b.content}</p>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground">
+                            {b.type}
+                          </span>
+                          {b.category && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors border-border bg-transparent text-muted-foreground">
+                              <div className="size-2 rounded-full" style={{ backgroundColor: b.category.color }} />
+                              {b.category.name}
+                            </span>
+                          )}
+                          <span className="text-sm text-muted-foreground">{formatDate(b.createdAt)}</span>
+                        </div>
+                        <p className="font-medium whitespace-pre-wrap">{b.content}</p>
+                      </div>
+                      <button
+                        onClick={() => handleEditClick(b)}
+                        className="text-xs font-medium text-muted-foreground hover:text-foreground underline underline-offset-4 decoration-muted-foreground/30 hover:decoration-foreground/50 transition-colors"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
               {visibleBroadcasts.length === 0 && (

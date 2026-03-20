@@ -9,9 +9,18 @@ CREATE TABLE houses (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Broadcasts
+-- 2. Categories
+CREATE TABLE categories (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  color TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 3. Broadcasts
 CREATE TABLE broadcasts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
   content TEXT,                          -- Text content
   media_url TEXT,                        -- Optional image URL
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -41,7 +50,16 @@ CREATE TABLE telegram_polls (
   message_id BIGINT NOT NULL             -- Message ID in the group
 );
 
--- 6. Votes
+-- 6. Telegram Messages (Tracks regular broadcast messages)
+CREATE TABLE telegram_messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  broadcast_id UUID REFERENCES broadcasts(id) ON DELETE CASCADE,
+  chat_id BIGINT REFERENCES houses(chat_id) ON DELETE CASCADE,
+  message_id BIGINT NOT NULL,
+  UNIQUE(broadcast_id, chat_id)
+);
+
+-- 7. Votes
 CREATE TABLE votes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   telegram_poll_id TEXT REFERENCES telegram_polls(telegram_poll_id) ON DELETE CASCADE,

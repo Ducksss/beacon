@@ -66,3 +66,19 @@ export async function sendPoll(chatId: string | number, question: string, option
 export async function setWebhook(url: string) {
   return telegramPost<boolean>('setWebhook', { url });
 }
+
+export async function editMessageText(chatId: string | number, messageId: number, text: string) {
+  return telegramPost<boolean | TelegramSendMessageResult>('editMessageText', {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+  });
+}
+
+export async function editMessageCaption(chatId: string | number, messageId: number, caption: string) {
+  return telegramPost<boolean | TelegramSendMessageResult>('editMessageCaption', {
+    chat_id: chatId,
+    message_id: messageId,
+    caption,
+  });
+}
