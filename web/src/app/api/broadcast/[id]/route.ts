@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { editMessageText, editMessageCaption } from '@/lib/telegram';
+import { getPublicDemoReadOnlyResponse } from '@/lib/public-demo-server';
 
-export async function PATCH(request: Request, context: { params: { id: string } }) {
+type BroadcastUpdatePayload = {
+  categoryId?: string | null;
+  content?: string;
+};
+
+export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    // In Next.js App Router (versions 13-14), params needs to be awaited before use
+    const publicDemoResponse = getPublicDemoReadOnlyResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
+    }
+
     const { id } = await context.params;
-    const body = await request.json();
+    const body = (await request.json()) as BroadcastUpdatePayload;
     const { categoryId, content } = body;
 
     if (!id) {
@@ -43,7 +53,7 @@ export async function PATCH(request: Request, context: { params: { id: string } 
       // If it's a poll, we shouldn't edit content because polls are immutable on TG. 
       // But we prevent that on the frontend anyway.
       if (tgMessages && tgMessages.length > 0) {
-        const editResults = await Promise.allSettled(
+        await Promise.allSettled(
           tgMessages.map(async (tm) => {
             if (broadcast.media_url) {
               await editMessageCaption(tm.chat_id, tm.message_id, cleanContent);
@@ -59,7 +69,7 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     }
 
     // 3. Update Supabase
-    const updatePayload: Record<string, any> = {};
+    const updatePayload: { category_id?: string | null; content?: string | null } = {};
     if (categoryId !== undefined) {
       updatePayload.category_id = categoryId || null;
     }
@@ -77,8 +87,8 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to update broadcast:', error);
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Server error' }, { status: 500 });
   }
 }

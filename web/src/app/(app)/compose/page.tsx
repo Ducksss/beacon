@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from 'next/link';
+import {
+  publicDemoModeEnabled,
+  PUBLIC_DEMO_READ_ONLY_MESSAGE,
+} from '@/lib/public-demo';
 
 type House = {
   chat_id: number;
@@ -16,6 +20,7 @@ type Category = {
 };
 
 export default function ComposePage() {
+  const isPublicDemoMode = publicDemoModeEnabled;
   const [type, setType] = useState<"message" | "poll">("message");
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
@@ -30,6 +35,8 @@ export default function ComposePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const [runtimeOrigin, setRuntimeOrigin] = useState("");
+  const [runtimeHostname, setRuntimeHostname] = useState("");
 
   const applyAnnouncementTemplate = () => {
     setType('message');
@@ -49,6 +56,12 @@ export default function ComposePage() {
   );
 
   useEffect(() => {
+    if (isPublicDemoMode) {
+      setLoadingHouses(false);
+      setLoadingCategories(false);
+      return;
+    }
+
     const controller = new AbortController();
 
     async function loadData() {
@@ -79,6 +92,15 @@ export default function ComposePage() {
 
     loadData();
     return () => controller.abort();
+  }, [isPublicDemoMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setRuntimeOrigin(window.location.origin);
+    setRuntimeHostname(window.location.hostname);
   }, []);
   
   const addOption = () => setOptions([...options, ""]);
@@ -143,11 +165,41 @@ export default function ComposePage() {
     content.trim().length > 0 &&
     (type === 'message' || options.map((option) => option.trim()).filter(Boolean).length >= 2) &&
     (sendToAll || selectedHouseIds.length > 0);
+  const isLocalDevHost =
+    runtimeHostname === "localhost" ||
+    runtimeHostname === "127.0.0.1" ||
+    runtimeHostname === "0.0.0.0";
+  const webhookUrl = runtimeOrigin ? `${runtimeOrigin}/api/webhook/telegram` : "/api/webhook/telegram";
+
+  if (isPublicDemoMode) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Dashboard
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight">New Broadcast</h1>
+          <p className="text-muted-foreground mt-1">Compose stays private in the public Beacon demo.</p>
+        </div>
+
+        <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 p-6 text-sm text-amber-100">
+          <p className="font-semibold text-white">Read-only public demo</p>
+          <p className="mt-2 leading-6">
+            {PUBLIC_DEMO_READ_ONLY_MESSAGE}
+          </p>
+          <p className="mt-2 leading-6">
+            The shared dashboard is intentionally curated for walkthroughs. Use <Link href="/try" className="font-semibold text-white underline underline-offset-4">Try Online</Link> to send a live announcement or poll with your own Telegram bot token instead.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
+        <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m15 18-6-6 6-6"/></svg>
           Back to Dashboard
         </Link>
@@ -227,6 +279,35 @@ export default function ComposePage() {
               )}
 
               {loadingHouses && <p className="text-xs text-muted-foreground">Loading house chats...</p>}
+
+              {!loadingHouses && activeHouses.length === 0 && (
+                <div className="rounded-md border border-amber-300/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+                  <p className="font-medium text-white">Beacon has not registered any Telegram groups yet.</p>
+                  <div className="mt-2 space-y-2 text-amber-100/90">
+                    <p>
+                      Beacon only adds house chats after Telegram sends a
+                      {" "}
+                      <code className="rounded bg-black/20 px-1 py-0.5 text-[0.85em]">my_chat_member</code>
+                      {" "}
+                      webhook update to
+                      {" "}
+                      <code className="rounded bg-black/20 px-1 py-0.5 text-[0.85em]">{webhookUrl}</code>.
+                    </p>
+                    {isLocalDevHost ? (
+                      <p>
+                        Telegram cannot reach
+                        {" "}
+                        <code className="rounded bg-black/20 px-1 py-0.5 text-[0.85em]">localhost</code>.
+                        Expose the app with a public tunnel or deploy it first, set the webhook to that public URL, then remove and re-add the bot to your group.
+                      </p>
+                    ) : (
+                      <p>
+                        If the webhook was added after your bot joined the group, remove and re-add the bot so Telegram sends the membership update again.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
