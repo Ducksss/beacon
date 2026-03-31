@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { isMissingTableError, missingSchemaMessage } from '@/lib/supabase-errors';
+import {
+  isPublicDemoMode,
+  PUBLIC_DEMO_PRIVATE_METADATA_MESSAGE,
+} from '@/lib/public-demo';
 
 export async function GET() {
   try {
+    if (isPublicDemoMode()) {
+      return NextResponse.json(
+        { error: PUBLIC_DEMO_PRIVATE_METADATA_MESSAGE },
+        { status: 403 }
+      );
+    }
+
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from('houses')

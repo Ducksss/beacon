@@ -92,22 +92,44 @@ You need Node.js installed, as well as a Supabase project and a Telegram Bot Tok
    ```sh
    git clone https://github.com/chaipinzheng/beacon.git
    ```
-4. Install NPM packages inside the `web` directory
+4. Run the onboarder setup script from the project root
    ```sh
-   cd web
-   npm install
+   npm run setup
    ```
 5. Set up your Database Schema in Supabase using the provided `.sql` file in `web/supabase/schema.sql`.
-6. Enter your API keys in `web/.env.local`
+6. Fill in the generated `web/.env.local`
    ```env
    NEXT_PUBLIC_SUPABASE_URL="ENTER YOUR SUPABASE URL"
    SUPABASE_SERVICE_ROLE_KEY="ENTER YOUR SUPABASE SERVICE ROLE KEY"
    TELEGRAM_BOT_TOKEN="ENTER YOUR TELEGRAM BOT TOKEN"
+   NEXT_PUBLIC_BEACON_PUBLIC_DEMO="false"
    ```
 7. Run the development server
    ```sh
    npm run dev
    ```
+
+### Public Playground
+
+If you deploy the `web` app publicly, visitors can use the `/try` page to test Beacon online with their own Telegram bot token and chat IDs.
+
+- Tokens submitted on `/try` are used only for that request and are not written to Supabase.
+- The playground supports one-off announcements, photo announcements, and polls.
+- The main dashboard remains the full self-hosted Beacon experience backed by your own Supabase project and Telegram webhook.
+
+### Public Demo Mode
+
+To turn Beacon into a polished read-only public demo, set this environment variable on the `web` app:
+
+```env
+NEXT_PUBLIC_BEACON_PUBLIC_DEMO="true"
+```
+
+- The dashboard becomes a curated read-only view.
+- Compose, category management, and inline editing are hidden and blocked with `403` responses.
+- The `/try` playground remains available for live testing with each visitor's own Telegram bot token.
+
+To reset the shared demo dataset, run the SQL in `web/supabase/demo-seed.sql` in your Supabase SQL editor.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

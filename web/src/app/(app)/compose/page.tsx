@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from 'next/link';
+import {
+  publicDemoModeEnabled,
+  PUBLIC_DEMO_READ_ONLY_MESSAGE,
+} from '@/lib/public-demo';
 
 type House = {
   chat_id: number;
@@ -16,6 +20,7 @@ type Category = {
 };
 
 export default function ComposePage() {
+  const isPublicDemoMode = publicDemoModeEnabled;
   const [type, setType] = useState<"message" | "poll">("message");
   const [content, setContent] = useState("");
   const [options, setOptions] = useState(["", ""]);
@@ -49,6 +54,12 @@ export default function ComposePage() {
   );
 
   useEffect(() => {
+    if (isPublicDemoMode) {
+      setLoadingHouses(false);
+      setLoadingCategories(false);
+      return;
+    }
+
     const controller = new AbortController();
 
     async function loadData() {
@@ -79,7 +90,7 @@ export default function ComposePage() {
 
     loadData();
     return () => controller.abort();
-  }, []);
+  }, [isPublicDemoMode]);
   
   const addOption = () => setOptions([...options, ""]);
   const updateOption = (index: number, val: string) => {
@@ -144,10 +155,35 @@ export default function ComposePage() {
     (type === 'message' || options.map((option) => option.trim()).filter(Boolean).length >= 2) &&
     (sendToAll || selectedHouseIds.length > 0);
 
+  if (isPublicDemoMode) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div>
+          <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m15 18-6-6 6-6"/></svg>
+            Back to Dashboard
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight">New Broadcast</h1>
+          <p className="text-muted-foreground mt-1">Compose stays private in the public Beacon demo.</p>
+        </div>
+
+        <div className="rounded-xl border border-amber-300/30 bg-amber-500/10 p-6 text-sm text-amber-100">
+          <p className="font-semibold text-white">Read-only public demo</p>
+          <p className="mt-2 leading-6">
+            {PUBLIC_DEMO_READ_ONLY_MESSAGE}
+          </p>
+          <p className="mt-2 leading-6">
+            The shared dashboard is intentionally curated for walkthroughs. Use <Link href="/try" className="font-semibold text-white underline underline-offset-4">Try Online</Link> to send a live announcement or poll with your own Telegram bot token instead.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
-        <Link href="/" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
+        <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground mb-4 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><path d="m15 18-6-6 6-6"/></svg>
           Back to Dashboard
         </Link>

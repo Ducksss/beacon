@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { sendMessage, sendPhoto, sendPoll } from '@/lib/telegram';
 import { isMissingTableError, missingSchemaMessage } from '@/lib/supabase-errors';
+import { isPublicDemoMode, PUBLIC_DEMO_READ_ONLY_MESSAGE } from '@/lib/public-demo';
 
 type BroadcastType = 'message' | 'poll';
 
@@ -76,6 +77,10 @@ async function getTargetHouses(supabase: ReturnType<typeof getSupabaseAdmin>, pa
 
 export async function POST(request: Request) {
   try {
+    if (isPublicDemoMode()) {
+      return NextResponse.json({ error: PUBLIC_DEMO_READ_ONLY_MESSAGE }, { status: 403 });
+    }
+
     const payload = (await request.json()) as BroadcastPayload;
     const validationError = validatePayload(payload);
 
