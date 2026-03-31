@@ -1,6 +1,7 @@
 BEGIN;
 
 -- Reset the shared demo dataset in dependency order so the script is rerunnable.
+DELETE FROM playground_rate_limits;
 DELETE FROM votes;
 DELETE FROM telegram_polls;
 DELETE FROM poll_options;

@@ -67,6 +67,30 @@ export type Database = {
         }
         Relationships: []
       }
+      playground_rate_limits: {
+        Row: {
+          created_at: string
+          deliveries: number
+          identifier: string
+          reset_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deliveries?: number
+          identifier: string
+          reset_at: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deliveries?: number
+          identifier?: string
+          reset_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       houses: {
         Row: {
           chat_id: number

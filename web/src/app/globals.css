@@ -113,6 +113,11 @@
   .float-gentle {
     animation: float-gentle 8s ease-in-out infinite;
   }
+
+  .marquee-track {
+    animation: marquee-track 34s linear infinite;
+    will-change: transform;
+  }
 }
 
 @keyframes reveal-up {
@@ -147,5 +152,15 @@
 
   50% {
     transform: translateY(-8px);
+  }
+}
+
+@keyframes marquee-track {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
   }
 }

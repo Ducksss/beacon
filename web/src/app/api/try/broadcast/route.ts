@@ -4,6 +4,7 @@ import {
   getRejectedErrorMessages,
   normalizePollOptions,
 } from '@/lib/broadcast-utils';
+import { enforcePlaygroundRateLimit } from '@/lib/playground-rate-limit';
 
 type PlaygroundBroadcastType = 'message' | 'poll';
 
@@ -15,27 +16,6 @@ type PlaygroundPayload = {
   mediaUrl?: string;
   options?: string[];
 };
-
-type RateLimitEntry = {
-  deliveries: number;
-  resetAt: number;
-};
-
-const PLAYGROUND_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
-const PLAYGROUND_RATE_LIMIT_MAX_DELIVERIES = 30;
-
-const playgroundRateLimitStore =
-  globalThis as typeof globalThis & {
-    __beaconPlaygroundRateLimit?: Map<string, RateLimitEntry>;
-  };
-
-function getPlaygroundRateLimitMap(): Map<string, RateLimitEntry> {
-  if (!playgroundRateLimitStore.__beaconPlaygroundRateLimit) {
-    playgroundRateLimitStore.__beaconPlaygroundRateLimit = new Map();
-  }
-
-  return playgroundRateLimitStore.__beaconPlaygroundRateLimit;
-}
 
 function isValidChatId(value: string): boolean {
   return /^-?\d+$/.test(value.trim());
@@ -67,57 +47,6 @@ function validateMediaUrl(mediaUrl?: string): string | null {
   } catch {
     return 'Media URL must be a valid URL';
   }
-}
-
-function getClientIdentifier(request: Request): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    const clientIp = forwardedFor.split(',')[0]?.trim();
-    if (clientIp) {
-      return `ip:${clientIp}`;
-    }
-  }
-
-  const directIp =
-    request.headers.get('cf-connecting-ip') ??
-    request.headers.get('x-real-ip');
-
-  if (directIp?.trim()) {
-    return `ip:${directIp.trim()}`;
-  }
-
-  const userAgent = request.headers.get('user-agent')?.trim();
-  return userAgent ? `ua:${userAgent}` : 'anonymous';
-}
-
-function enforceRateLimit(request: Request, deliveryCount: number): string | null {
-  const identifier = getClientIdentifier(request);
-  const now = Date.now();
-  const rateLimitMap = getPlaygroundRateLimitMap();
-
-  for (const [key, entry] of rateLimitMap) {
-    if (entry.resetAt <= now) {
-      rateLimitMap.delete(key);
-    }
-  }
-
-  const currentEntry = rateLimitMap.get(identifier);
-  const activeEntry =
-    currentEntry && currentEntry.resetAt > now
-      ? currentEntry
-      : { deliveries: 0, resetAt: now + PLAYGROUND_RATE_LIMIT_WINDOW_MS };
-
-  if (activeEntry.deliveries + deliveryCount > PLAYGROUND_RATE_LIMIT_MAX_DELIVERIES) {
-    const retryAfterMinutes = Math.ceil((activeEntry.resetAt - now) / 60000);
-    return `Rate limit exceeded for the public playground. Please wait about ${retryAfterMinutes} minute${retryAfterMinutes === 1 ? '' : 's'} before sending more test messages.`;
-  }
-
-  rateLimitMap.set(identifier, {
-    deliveries: activeEntry.deliveries + deliveryCount,
-    resetAt: activeEntry.resetAt,
-  });
-
-  return null;
 }
 
 function validatePayload(payload: PlaygroundPayload): string | null {
@@ -173,7 +102,7 @@ export async function POST(request: Request) {
 
     const telegram = createTelegramClient(payload.botToken.trim());
     const chatIds = normalizeChatIds(payload.chatIds);
-    const rateLimitError = enforceRateLimit(request, chatIds.length);
+    const rateLimitError = await enforcePlaygroundRateLimit(request, chatIds.length);
     if (rateLimitError) {
       return NextResponse.json({ error: rateLimitError }, { status: 429 });
     }

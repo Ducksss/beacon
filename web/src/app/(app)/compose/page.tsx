@@ -35,6 +35,8 @@ export default function ComposePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const [runtimeOrigin, setRuntimeOrigin] = useState("");
+  const [runtimeHostname, setRuntimeHostname] = useState("");
 
   const applyAnnouncementTemplate = () => {
     setType('message');
@@ -91,6 +93,15 @@ export default function ComposePage() {
     loadData();
     return () => controller.abort();
   }, [isPublicDemoMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setRuntimeOrigin(window.location.origin);
+    setRuntimeHostname(window.location.hostname);
+  }, []);
   
   const addOption = () => setOptions([...options, ""]);
   const updateOption = (index: number, val: string) => {
@@ -154,6 +165,11 @@ export default function ComposePage() {
     content.trim().length > 0 &&
     (type === 'message' || options.map((option) => option.trim()).filter(Boolean).length >= 2) &&
     (sendToAll || selectedHouseIds.length > 0);
+  const isLocalDevHost =
+    runtimeHostname === "localhost" ||
+    runtimeHostname === "127.0.0.1" ||
+    runtimeHostname === "0.0.0.0";
+  const webhookUrl = runtimeOrigin ? `${runtimeOrigin}/api/webhook/telegram` : "/api/webhook/telegram";
 
   if (isPublicDemoMode) {
     return (
@@ -263,6 +279,35 @@ export default function ComposePage() {
               )}
 
               {loadingHouses && <p className="text-xs text-muted-foreground">Loading house chats...</p>}
+
+              {!loadingHouses && activeHouses.length === 0 && (
+                <div className="rounded-md border border-amber-300/30 bg-amber-500/10 p-3 text-sm text-amber-100">
+                  <p className="font-medium text-white">Beacon has not registered any Telegram groups yet.</p>
+                  <div className="mt-2 space-y-2 text-amber-100/90">
+                    <p>
+                      Beacon only adds house chats after Telegram sends a
+                      {" "}
+                      <code className="rounded bg-black/20 px-1 py-0.5 text-[0.85em]">my_chat_member</code>
+                      {" "}
+                      webhook update to
+                      {" "}
+                      <code className="rounded bg-black/20 px-1 py-0.5 text-[0.85em]">{webhookUrl}</code>.
+                    </p>
+                    {isLocalDevHost ? (
+                      <p>
+                        Telegram cannot reach
+                        {" "}
+                        <code className="rounded bg-black/20 px-1 py-0.5 text-[0.85em]">localhost</code>.
+                        Expose the app with a public tunnel or deploy it first, set the webhook to that public URL, then remove and re-add the bot to your group.
+                      </p>
+                    ) : (
+                      <p>
+                        If the webhook was added after your bot joined the group, remove and re-add the bot so Telegram sends the membership update again.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

@@ -15,6 +15,36 @@ type TelegramSendPollResult = {
   };
 };
 
+type TelegramWebhookInfoResult = {
+  url: string;
+  has_custom_certificate: boolean;
+  pending_update_count: number;
+  last_error_date?: number;
+  last_error_message?: string;
+};
+
+type TelegramUpdateResult<T> = T[];
+
+export type TelegramUpdate = {
+  update_id: number;
+  my_chat_member?: {
+    chat: {
+      id: number;
+      title?: string;
+    };
+    new_chat_member: {
+      status: string;
+    };
+  };
+  poll_answer?: {
+    poll_id: string;
+    user: {
+      id: number;
+    };
+    option_ids?: number[];
+  };
+};
+
 function requireBotToken(botToken?: string): string {
   const token = botToken ?? process.env.TELEGRAM_BOT_TOKEN;
   if (!token?.trim()) {
@@ -76,6 +106,21 @@ export function createTelegramClient(botToken: string) {
     setWebhook(url: string) {
       return telegramPost<boolean>('setWebhook', { url }, token);
     },
+    getWebhookInfo() {
+      return telegramPost<TelegramWebhookInfoResult>('getWebhookInfo', {}, token);
+    },
+    getUpdates(offset?: number, limit = 100) {
+      const payload: Record<string, unknown> = {
+        limit,
+        allowed_updates: ['my_chat_member', 'poll_answer'],
+      };
+
+      if (typeof offset === 'number') {
+        payload.offset = offset;
+      }
+
+      return telegramPost<TelegramUpdateResult<TelegramUpdate>>('getUpdates', payload, token);
+    },
     editMessageText(chatId: string | number, messageId: number, text: string) {
       return telegramPost<boolean | TelegramSendMessageResult>('editMessageText', {
         chat_id: chatId,
@@ -115,6 +160,14 @@ export async function sendPoll(chatId: string | number, question: string, option
 
 export async function setWebhook(url: string) {
   return getDefaultTelegramClient().setWebhook(url);
+}
+
+export async function getWebhookInfo() {
+  return getDefaultTelegramClient().getWebhookInfo();
+}
+
+export async function getUpdates(offset?: number, limit = 100) {
+  return getDefaultTelegramClient().getUpdates(offset, limit);
 }
 
 export async function editMessageText(chatId: string | number, messageId: number, text: string) {

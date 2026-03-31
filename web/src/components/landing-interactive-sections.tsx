@@ -16,6 +16,17 @@ type SurfaceStory = {
   ctaLabel: string;
 };
 
+type ViewerLens = {
+  id: string;
+  label: string;
+  eyebrow: string;
+  title: string;
+  summary: string;
+  statLabel: string;
+  statValue: string;
+  checkpoints: string[];
+};
+
 const defaultSurfaceStories: SurfaceStory[] = [
   {
     id: "playground",
@@ -113,6 +124,65 @@ const releaseDepth = [
   },
 ];
 
+const signalRail = [
+  "Live Telegram send",
+  "Read-only shared dashboard",
+  "Public demo guardrails",
+  "Operator compose surface",
+  "Poll collation",
+  "Portfolio-ready release",
+  "Real product routes",
+  "Safe public trial",
+];
+
+const viewerLenses: ViewerLens[] = [
+  {
+    id: "reviewer",
+    label: "Reviewer",
+    eyebrow: "Portfolio Lens",
+    title: "See the release as a product story that already has its own demo choreography.",
+    summary:
+      "This lens is about how clearly the launch communicates capability. A reviewer should understand the value in one sweep: try something live, inspect the system, then trace it back to the operator surface.",
+    statLabel: "First impression",
+    statValue: "Live > Static",
+    checkpoints: [
+      "The page points directly into a real public trial instead of a dead mockup.",
+      "The dashboard proves product depth beyond a single hero moment.",
+      "The compose flow shows there is an operational core behind the cinematic wrapper.",
+    ],
+  },
+  {
+    id: "operator",
+    label: "Operator",
+    eyebrow: "Workflow Lens",
+    title: "See Beacon as an internal comms tool with a public-safe edge.",
+    summary:
+      "This lens focuses on operational trust. The release should show that Beacon can support real campus teams while still protecting internal controls when the app is opened publicly.",
+    statLabel: "Core promise",
+    statValue: "Calm control room",
+    checkpoints: [
+      "Public users can test the sending flow without touching shared project analytics.",
+      "The dashboard remains useful for demos even when write-heavy actions are restricted.",
+      "The operator path still reads like a serious internal workflow rather than a portfolio-only façade.",
+    ],
+  },
+  {
+    id: "builder",
+    label: "Builder",
+    eyebrow: "System Lens",
+    title: "See how the release balances polish, guardrails, and product truth.",
+    summary:
+      "This lens is for people who care how the thing was shaped. Beacon is interesting because the public story is not detached from the codebase; it is assembled around real routes, real constraints, and carefully chosen demo boundaries.",
+    statLabel: "Interesting bit",
+    statValue: "Narrative architecture",
+    checkpoints: [
+      "The landing page is driven by the same routes the product actually exposes.",
+      "Public demo mode changes what is shown and what is protected instead of faking a separate brochure app.",
+      "The release can grow into authentication, scheduling, and deeper analytics without discarding the current public story.",
+    ],
+  },
+];
+
 export function LandingInteractiveSections({
   publicDemoMode,
 }: {
@@ -136,13 +206,31 @@ export function LandingInteractiveSections({
 
   const [activeSurfaceId, setActiveSurfaceId] = useState(surfaceStories[0].id);
   const [openQuestion, setOpenQuestion] = useState(faqItems[0].question);
+  const [activeLensId, setActiveLensId] = useState(viewerLenses[0].id);
 
   const activeSurface =
     surfaceStories.find((story) => story.id === activeSurfaceId) ??
     surfaceStories[0];
+  const activeLens =
+    viewerLenses.find((lens) => lens.id === activeLensId) ?? viewerLenses[0];
 
   return (
     <>
+      <section className="relative border-t border-white/8 bg-[#0b0b0b]/96 py-6">
+        <div className="overflow-hidden">
+          <div className="marquee-track flex min-w-max gap-3 px-5 sm:px-8 lg:px-10">
+            {[...signalRail, ...signalRail].map((item, index) => (
+              <span
+                key={`${item}-${index}`}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[0.72rem] uppercase tracking-[0.24em] text-[#f7f2e8]/62"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="relative border-t border-white/8 bg-[#0a0a0a]/92 py-20 sm:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-14">
@@ -236,6 +324,106 @@ export function LandingInteractiveSections({
                     >
                       {activeSurface.ctaLabel}
                     </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative border-t border-white/8 bg-[#090909]/92 py-20 sm:py-24">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-14">
+            <div className="max-w-lg">
+              <p className="text-[0.72rem] uppercase tracking-[0.38em] text-[#ffbf6b]/78">
+                Pick Your Lens
+              </p>
+              <h2 className="font-display mt-5 text-4xl leading-tight tracking-[-0.04em] text-[#f7f2e8] sm:text-5xl">
+                The same release reads differently depending on who is looking.
+              </h2>
+              <p className="mt-5 text-base leading-7 text-[#f7f2e8]/66">
+                Switch perspectives below. This adds more substance to the page
+                without repeating the same surface tour a second time.
+              </p>
+
+              <div className="mt-8 grid gap-3">
+                {viewerLenses.map((lens) => {
+                  const isActive = lens.id === activeLens.id;
+
+                  return (
+                    <button
+                      key={lens.id}
+                      type="button"
+                      onMouseEnter={() => setActiveLensId(lens.id)}
+                      onFocus={() => setActiveLensId(lens.id)}
+                      onClick={() => setActiveLensId(lens.id)}
+                      className={`rounded-[1.35rem] border px-4 py-4 text-left transition-all duration-300 ${
+                        isActive
+                          ? "border-[#ffbf6b]/30 bg-[#ffbf6b]/8 shadow-[0_18px_60px_rgba(0,0,0,0.18)]"
+                          : "border-white/8 bg-white/[0.03] hover:border-white/14 hover:bg-white/[0.05]"
+                      }`}
+                    >
+                      <p className="text-[0.68rem] uppercase tracking-[0.28em] text-[#ffbf6b]/80">
+                        {lens.eyebrow}
+                      </p>
+                      <h3 className="mt-2 text-base font-semibold text-[#f7f2e8]">
+                        {lens.label}
+                      </h3>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="soft-panel rounded-[2rem] border border-white/8 p-4 sm:p-5">
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_14rem]">
+                <div className="rounded-[1.6rem] border border-white/8 bg-[#0d0d0d] p-5">
+                  <p className="text-[0.68rem] uppercase tracking-[0.3em] text-[#ffbf6b]/80">
+                    {activeLens.eyebrow}
+                  </p>
+                  <h3 className="font-display mt-4 text-4xl leading-tight tracking-[-0.04em] text-[#f7f2e8]">
+                    {activeLens.title}
+                  </h3>
+                  <p className="mt-5 max-w-2xl text-base leading-7 text-[#f7f2e8]/62">
+                    {activeLens.summary}
+                  </p>
+
+                  <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                    {activeLens.checkpoints.map((checkpoint, index) => (
+                      <article
+                        key={checkpoint}
+                        className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-4"
+                      >
+                        <p className="text-[0.65rem] uppercase tracking-[0.22em] text-[#ffbf6b]/78">
+                          0{index + 1}
+                        </p>
+                        <p className="mt-3 text-sm leading-6 text-[#f7f2e8]/64">
+                          {checkpoint}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-between rounded-[1.6rem] border border-white/8 bg-white/[0.03] p-5">
+                  <div>
+                    <p className="text-[0.68rem] uppercase tracking-[0.28em] text-[#ffbf6b]/80">
+                      {activeLens.statLabel}
+                    </p>
+                    <p className="font-display mt-4 text-4xl leading-none text-[#f7f2e8]">
+                      {activeLens.statValue}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[1.35rem] border border-white/8 bg-[#0d0d0d] p-4">
+                    <p className="text-[0.65rem] uppercase tracking-[0.22em] text-[#f7f2e8]/40">
+                      Why it feels cool
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-[#f7f2e8]/60">
+                      The release is not just prettier now. It gives each kind of
+                      viewer a stronger reason to keep exploring.
+                    </p>
                   </div>
                 </div>
               </div>

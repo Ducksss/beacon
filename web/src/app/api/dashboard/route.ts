@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { tryGetSupabaseAdmin } from '@/lib/supabase';
 import { isMissingTableError, missingSchemaMessage } from '@/lib/supabase-errors';
 import { isPublicDemoMode } from '@/lib/public-demo';
+import { syncPendingTelegramUpdates } from '@/lib/telegram-updates';
 
 type BroadcastRow = {
   id: string;
@@ -173,6 +174,14 @@ export async function GET() {
         pollSummaries: [],
         warning: 'Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.',
       });
+    }
+
+    if (!publicDemoMode) {
+      try {
+        await syncPendingTelegramUpdates(supabase);
+      } catch (syncError) {
+        console.warn('Failed to sync pending Telegram updates:', syncError);
+      }
     }
 
     const [
