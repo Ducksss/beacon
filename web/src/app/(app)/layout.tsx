@@ -49,12 +49,14 @@ export default function AppLayout({
               >
                 Try Online
               </Link>
-              <Link
-                href="/"
-                className="rounded-full px-3 py-1.5 transition-colors hover:bg-white/6 hover:text-white"
-              >
-                Product Story
-              </Link>
+              {publicDemoMode && (
+                <Link
+                  href="/"
+                  className="rounded-full px-3 py-1.5 transition-colors hover:bg-white/6 hover:text-white"
+                >
+                  Product Story
+                </Link>
+              )}
               {!publicDemoMode && (
                 <Link
                   href="/compose"

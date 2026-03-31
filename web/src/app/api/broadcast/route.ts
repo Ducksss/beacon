@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { sendMessage, sendPhoto, sendPoll } from '@/lib/telegram';
 import { isMissingTableError, missingSchemaMessage } from '@/lib/supabase-errors';
-import { isPublicDemoMode, PUBLIC_DEMO_READ_ONLY_MESSAGE } from '@/lib/public-demo';
+import { getPublicDemoReadOnlyResponse } from '@/lib/public-demo-server';
+import {
+  getRejectedErrorMessages,
+  normalizePollOptions,
+} from '@/lib/broadcast-utils';
 
 type BroadcastType = 'message' | 'poll';
 
@@ -41,7 +45,7 @@ function validatePayload(payload: BroadcastPayload): string | null {
   }
 
   if (payload.type === 'poll') {
-    const options = (payload.options ?? []).map((option) => option.trim()).filter(Boolean);
+    const options = normalizePollOptions(payload.options);
     if (options.length < 2) {
       return 'At least 2 poll options are required';
     }
@@ -77,8 +81,9 @@ async function getTargetHouses(supabase: ReturnType<typeof getSupabaseAdmin>, pa
 
 export async function POST(request: Request) {
   try {
-    if (isPublicDemoMode()) {
-      return NextResponse.json({ error: PUBLIC_DEMO_READ_ONLY_MESSAGE }, { status: 403 });
+    const publicDemoResponse = getPublicDemoReadOnlyResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
     }
 
     const payload = (await request.json()) as BroadcastPayload;
@@ -110,7 +115,7 @@ export async function POST(request: Request) {
     }
 
     if (payload.type === 'poll') {
-      const options = (payload.options ?? []).map((option) => option.trim()).filter(Boolean);
+      const options = normalizePollOptions(payload.options);
 
       const { data: poll, error: pollError } = await supabase
         .from('polls')
@@ -162,9 +167,7 @@ export async function POST(request: Request) {
       );
 
       const sentCount = pollResults.filter((result) => result.status === 'fulfilled').length;
-      const failures = pollResults
-        .filter((result) => result.status === 'rejected')
-        .map((result) => (result as PromiseRejectedResult).reason?.message || 'Unknown error');
+      const failures = getRejectedErrorMessages(pollResults);
 
       return NextResponse.json({
         ok: true,
@@ -203,9 +206,7 @@ export async function POST(request: Request) {
     );
 
     const sentCount = messageResults.filter((result) => result.status === 'fulfilled').length;
-    const failures = messageResults
-      .filter((result) => result.status === 'rejected')
-      .map((result) => (result as PromiseRejectedResult).reason?.message || 'Unknown error');
+    const failures = getRejectedErrorMessages(messageResults);
 
     return NextResponse.json({
       ok: true,

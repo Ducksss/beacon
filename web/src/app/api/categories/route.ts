@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
-import { isPublicDemoMode, PUBLIC_DEMO_READ_ONLY_MESSAGE } from '@/lib/public-demo';
+import { getPublicDemoReadOnlyResponse } from '@/lib/public-demo-server';
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unexpected server error';
@@ -25,8 +25,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    if (isPublicDemoMode()) {
-      return NextResponse.json({ error: PUBLIC_DEMO_READ_ONLY_MESSAGE }, { status: 403 });
+    const publicDemoResponse = getPublicDemoReadOnlyResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
     }
 
     const { name, color } = await request.json();
@@ -52,8 +53,9 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    if (isPublicDemoMode()) {
-      return NextResponse.json({ error: PUBLIC_DEMO_READ_ONLY_MESSAGE }, { status: 403 });
+    const publicDemoResponse = getPublicDemoReadOnlyResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
     }
 
     const { id, name, color } = await request.json();
@@ -80,8 +82,9 @@ export async function PATCH(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    if (isPublicDemoMode()) {
-      return NextResponse.json({ error: PUBLIC_DEMO_READ_ONLY_MESSAGE }, { status: 403 });
+    const publicDemoResponse = getPublicDemoReadOnlyResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
     }
 
     const { searchParams } = new URL(request.url);

@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { isMissingTableError, missingSchemaMessage } from '@/lib/supabase-errors';
-import {
-  isPublicDemoMode,
-  PUBLIC_DEMO_PRIVATE_METADATA_MESSAGE,
-} from '@/lib/public-demo';
+import { getPublicDemoPrivateMetadataResponse } from '@/lib/public-demo-server';
 
 export async function GET() {
   try {
-    if (isPublicDemoMode()) {
-      return NextResponse.json(
-        { error: PUBLIC_DEMO_PRIVATE_METADATA_MESSAGE },
-        { status: 403 }
-      );
+    const publicDemoResponse = getPublicDemoPrivateMetadataResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
     }
 
     const supabase = getSupabaseAdmin();

@@ -1,46 +1,48 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { isPublicDemoMode } from "@/lib/public-demo";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 const featureRows = [
   {
     index: "01",
-    title: "Broadcast once. Reach every house.",
-    body: "Draft one announcement from the CSC desk, dispatch it across active house chats, and keep delivery consistent without copy-paste chaos.",
-    image: "/beacon/compose.png",
-    alt: "Beacon compose interface for announcements and polls",
+    title: "Let visitors test the send flow live.",
+    body: "The public playground turns Beacon into a real portfolio artifact: anyone can paste their own Telegram bot token, send a one-off announcement or poll, and understand the product through an actual workflow.",
+    image: "/beacon/try.png",
+    alt: "Beacon public playground interface",
   },
   {
     index: "02",
-    title: "Run interest checks where students already are.",
-    body: "Launch quick polls inside Telegram, then watch the dashboard collate signal across every house so committees can make the next call faster.",
+    title: "Show the product through a curated dashboard.",
+    body: "The shared dashboard gives reviewers and stakeholders a believable system view with live poll collation, category coverage, and campaign history, while the public demo keeps risky operator actions read-only.",
     image: "/beacon/dashboard.png",
-    alt: "Beacon dashboard showing broadcasts and poll collation",
+    alt: "Beacon shared demo dashboard",
   },
   {
     index: "03",
-    title: "Fix the message without losing the thread.",
-    body: "Correct categories, clean up wording, and keep live comms aligned after send instead of chasing edits in six separate group chats.",
-    image: "/beacon/categories.png",
-    alt: "Beacon category management interface",
+    title: "Reveal the operator surface behind the demo.",
+    body: "Behind the public story, the compose workflow shows how Beacon becomes a real internal tool: draft announcements, run interest checks, and prepare polished sends from one calm command centre.",
+    image: "/beacon/compose.png",
+    alt: "Beacon compose interface",
   },
 ];
 
 const workflowSteps = [
   {
     index: "01",
-    title: "Shape the message at the centre.",
-    body: "Committee leads prepare a clean announcement or poll, tag it by campaign or event, and choose exactly which house chats should receive it.",
+    title: "Start with a safe public trial.",
+    body: "Visitors begin in the playground, where they can exercise a real Telegram send with their own bot token without writing into the shared Beacon dataset.",
   },
   {
     index: "02",
-    title: "Beacon handles the distributed send.",
-    body: "Telegram delivery stays standardized across decentralized house networks, so every student sees the same wording, timing, and context.",
+    title: "Move into the shared product view.",
+    body: "After the trial, the curated dashboard explains the bigger system: active houses, campaign history, categories, and poll collation presented through realistic public demo data.",
   },
   {
     index: "03",
-    title: "Read the response without spreadsheet cleanup.",
-    body: "The dashboard keeps a live view of broadcasts, vote trends, and campaign categories, so follow-up decisions happen from one shared source of truth.",
+    title: "Then show the full operator workflow.",
+    body: "The compose surface completes the narrative by showing how Beacon works once it graduates from portfolio demo to internal operations tool.",
   },
 ];
 
@@ -90,7 +92,14 @@ const creatorProfile = {
 };
 
 export default function LandingPage() {
+  const appIsConfigured =
+    isSupabaseConfigured() && Boolean(process.env.TELEGRAM_BOT_TOKEN?.trim());
   const publicDemoMode = isPublicDemoMode();
+
+  if (appIsConfigured && !publicDemoMode) {
+    redirect("/dashboard");
+  }
+
   const releaseHighlights = publicDemoMode
     ? [
         {
@@ -227,8 +236,8 @@ export default function LandingPage() {
                 </div>
                 <div className="reveal-scale absolute left-0 top-[56%] h-[30%] w-[48%] overflow-hidden rounded-[1.75rem] border border-white/12 bg-[#111111] shadow-[0_24px_80px_rgba(0,0,0,0.4)] [animation-delay:180ms]">
                   <Image
-                    src="/beacon/compose.png"
-                    alt="Beacon compose view"
+                    src="/beacon/try.png"
+                    alt="Beacon public playground"
                     fill
                     sizes="(min-width: 1024px) 18rem, 44vw"
                     className="object-cover object-left-top"
@@ -236,8 +245,8 @@ export default function LandingPage() {
                 </div>
                 <div className="reveal-scale absolute bottom-[2%] right-[3%] h-[24%] w-[44%] overflow-hidden rounded-[1.5rem] border border-[#ffbf6b]/18 bg-[#0f0f0f] shadow-[0_24px_80px_rgba(0,0,0,0.35)] [animation-delay:300ms]">
                   <Image
-                    src="/beacon/categories.png"
-                    alt="Beacon category management"
+                    src="/beacon/compose.png"
+                    alt="Beacon compose workflow"
                     fill
                     sizes="(min-width: 1024px) 16rem, 40vw"
                     className="object-cover object-left-top"
@@ -337,15 +346,15 @@ export default function LandingPage() {
           <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-20 lg:px-10">
             <div className="lg:sticky lg:top-28 lg:self-start">
               <p className="text-[0.72rem] uppercase tracking-[0.38em] text-[#ffbf6b]/78">
-                Workflow
+                Release Flow
               </p>
               <h2 className="font-display mt-5 text-4xl leading-tight tracking-[-0.04em] text-[#f7f2e8] sm:text-5xl">
-                A calmer operating rhythm for campus-wide updates.
+                A public demo path that still feels like a real product.
               </h2>
               <p className="mt-5 max-w-md text-base leading-7 text-[#f7f2e8]/64">
-                Beacon is designed around the actual path of a campus message:
-                draft at the centre, deliver through local channels, then read the
-                signal back without manual cleanup.
+                The release now tells a tighter story: live trial first, shared
+                system view second, then the operator workflow that proves Beacon
+                is more than a static front-end exercise.
               </p>
               <div className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/10 bg-[#121212]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,191,107,0.12),_transparent_46%)]" />

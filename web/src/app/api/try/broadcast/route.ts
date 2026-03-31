@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createTelegramClient } from '@/lib/telegram';
+import {
+  getRejectedErrorMessages,
+  normalizePollOptions,
+} from '@/lib/broadcast-utils';
 
 type PlaygroundBroadcastType = 'message' | 'poll';
 
@@ -117,6 +121,8 @@ function enforceRateLimit(request: Request, deliveryCount: number): string | nul
 }
 
 function validatePayload(payload: PlaygroundPayload): string | null {
+  const chatIds = normalizeChatIds(payload.chatIds);
+
   if (!payload.botToken?.trim()) {
     return 'Telegram bot token is required';
   }
@@ -129,11 +135,11 @@ function validatePayload(payload: PlaygroundPayload): string | null {
     return payload.type === 'poll' ? 'Poll question is required' : 'Announcement content is required';
   }
 
-  if (normalizeChatIds(payload.chatIds).length === 0) {
+  if (chatIds.length === 0) {
     return 'At least one valid Telegram chat ID is required';
   }
 
-  if (normalizeChatIds(payload.chatIds).length > 10) {
+  if (chatIds.length > 10) {
     return 'Please limit each test run to 10 chat IDs';
   }
 
@@ -143,7 +149,7 @@ function validatePayload(payload: PlaygroundPayload): string | null {
   }
 
   if (payload.type === 'poll') {
-    const options = (payload.options ?? []).map((option) => option.trim()).filter(Boolean);
+    const options = normalizePollOptions(payload.options);
     if (options.length < 2) {
       return 'At least 2 poll options are required';
     }
@@ -176,7 +182,7 @@ export async function POST(request: Request) {
     const mediaUrl = payload.mediaUrl?.trim();
 
     if (payload.type === 'poll') {
-      const options = (payload.options ?? []).map((option) => option.trim()).filter(Boolean);
+      const options = normalizePollOptions(payload.options);
       const results = await Promise.allSettled(
         chatIds.map(async (chatId) => {
           const response = await telegram.sendPoll(chatId, content, options, false);
@@ -192,9 +198,7 @@ export async function POST(request: Request) {
         .filter((result): result is PromiseFulfilledResult<{ chatId: string; messageId: number | null; pollId: string | null }> => result.status === 'fulfilled')
         .map((result) => result.value);
 
-      const failures = results
-        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
-        .map((result) => result.reason instanceof Error ? result.reason.message : 'Unknown Telegram error');
+      const failures = getRejectedErrorMessages(results, 'Unknown Telegram error');
 
       return NextResponse.json({
         ok: true,
@@ -223,9 +227,7 @@ export async function POST(request: Request) {
       .filter((result): result is PromiseFulfilledResult<{ chatId: string; messageId: number | null }> => result.status === 'fulfilled')
       .map((result) => result.value);
 
-    const failures = results
-      .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
-      .map((result) => result.reason instanceof Error ? result.reason.message : 'Unknown Telegram error');
+    const failures = getRejectedErrorMessages(results, 'Unknown Telegram error');
 
     return NextResponse.json({
       ok: true,

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { editMessageText, editMessageCaption } from '@/lib/telegram';
-import { isPublicDemoMode, PUBLIC_DEMO_READ_ONLY_MESSAGE } from '@/lib/public-demo';
+import { getPublicDemoReadOnlyResponse } from '@/lib/public-demo-server';
 
 type BroadcastUpdatePayload = {
   categoryId?: string | null;
@@ -10,8 +10,9 @@ type BroadcastUpdatePayload = {
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    if (isPublicDemoMode()) {
-      return NextResponse.json({ error: PUBLIC_DEMO_READ_ONLY_MESSAGE }, { status: 403 });
+    const publicDemoResponse = getPublicDemoReadOnlyResponse();
+    if (publicDemoResponse) {
+      return publicDemoResponse;
     }
 
     const { id } = await context.params;
