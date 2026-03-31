@@ -1,50 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LandingInteractiveSections } from "@/components/landing-interactive-sections";
 import { isPublicDemoMode } from "@/lib/public-demo";
 import { isSupabaseConfigured } from "@/lib/supabase";
-
-const featureRows = [
-  {
-    index: "01",
-    title: "Let visitors test the send flow live.",
-    body: "The public playground turns Beacon into a real portfolio artifact: anyone can paste their own Telegram bot token, send a one-off announcement or poll, and understand the product through an actual workflow.",
-    image: "/beacon/try.png",
-    alt: "Beacon public playground interface",
-  },
-  {
-    index: "02",
-    title: "Show the product through a curated dashboard.",
-    body: "The shared dashboard gives reviewers and stakeholders a believable system view with live poll collation, category coverage, and campaign history, while the public demo keeps risky operator actions read-only.",
-    image: "/beacon/dashboard.png",
-    alt: "Beacon shared demo dashboard",
-  },
-  {
-    index: "03",
-    title: "Reveal the operator surface behind the demo.",
-    body: "Behind the public story, the compose workflow shows how Beacon becomes a real internal tool: draft announcements, run interest checks, and prepare polished sends from one calm command centre.",
-    image: "/beacon/compose.png",
-    alt: "Beacon compose interface",
-  },
-];
-
-const workflowSteps = [
-  {
-    index: "01",
-    title: "Start with a safe public trial.",
-    body: "Visitors begin in the playground, where they can exercise a real Telegram send with their own bot token without writing into the shared Beacon dataset.",
-  },
-  {
-    index: "02",
-    title: "Move into the shared product view.",
-    body: "After the trial, the curated dashboard explains the bigger system: active houses, campaign history, categories, and poll collation presented through realistic public demo data.",
-  },
-  {
-    index: "03",
-    title: "Then show the full operator workflow.",
-    body: "The compose surface completes the narrative by showing how Beacon works once it graduates from portfolio demo to internal operations tool.",
-  },
-];
 
 const defaultReleaseHighlights = [
   {
@@ -66,30 +25,6 @@ const defaultDemoSignals = [
   "Safe public trial route",
   "Live dashboard and poll collation",
 ];
-
-const creatorProfile = {
-  name: "Chai Pin Zheng",
-  role: "Builder of Beacon",
-  bio: "I build product-led demos and operational tools with a focus on clear systems, calm interfaces, and workflows that feel ready for real teams.",
-  links: [
-    {
-      label: "LinkedIn",
-      href: "https://www.linkedin.com/in/chai-pin-zheng/",
-    },
-    {
-      label: "GitHub",
-      href: "https://github.com/Ducksss",
-    },
-    {
-      label: "View source",
-      href: "https://github.com/ducksss/beacon",
-    },
-    {
-      label: "Try Beacon",
-      href: "/try",
-    },
-  ],
-};
 
 export default function LandingPage() {
   const appIsConfigured =
@@ -292,105 +227,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section
-          id="proof"
-          className="relative border-t border-white/8 bg-[#0c0c0c]/90 py-20 sm:py-24"
-        >
-          <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
-            <div className="max-w-3xl">
-              <p className="text-[0.72rem] uppercase tracking-[0.38em] text-[#ffbf6b]/78">
-                Product Proof
-              </p>
-              <h2 className="font-display mt-5 text-4xl leading-tight tracking-[-0.04em] text-[#f7f2e8] sm:text-5xl">
-                Built for committees that need reach, clarity, and a record of
-                what actually happened.
-              </h2>
-            </div>
-
-            <div className="mt-16 border-t border-white/8">
-              {featureRows.map((feature) => (
-                <article
-                  key={feature.title}
-                  className="grid gap-8 border-b border-white/8 py-10 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:items-center lg:gap-14"
-                >
-                  <div className="max-w-xl">
-                    <p className="text-sm uppercase tracking-[0.3em] text-[#f7f2e8]/38">
-                      {feature.index}
-                    </p>
-                    <h3 className="mt-4 font-display text-3xl leading-tight tracking-[-0.03em] text-[#f7f2e8]">
-                      {feature.title}
-                    </h3>
-                    <p className="mt-4 text-base leading-7 text-[#f7f2e8]/66">
-                      {feature.body}
-                    </p>
-                  </div>
-                  <div className="group relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#111111]">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,191,107,0.16),_transparent_44%)] opacity-90 transition-opacity duration-500 group-hover:opacity-100" />
-                    <div className="relative aspect-[16/10] overflow-hidden">
-                      <Image
-                        src={feature.image}
-                        alt={feature.alt}
-                        fill
-                        sizes="(min-width: 1024px) 42rem, 90vw"
-                        className="object-cover object-left-top transition-transform duration-700 group-hover:scale-[1.03]"
-                      />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="relative border-t border-white/8 py-20 sm:py-24">
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-20 lg:px-10">
-            <div className="lg:sticky lg:top-28 lg:self-start">
-              <p className="text-[0.72rem] uppercase tracking-[0.38em] text-[#ffbf6b]/78">
-                Release Flow
-              </p>
-              <h2 className="font-display mt-5 text-4xl leading-tight tracking-[-0.04em] text-[#f7f2e8] sm:text-5xl">
-                A public demo path that still feels like a real product.
-              </h2>
-              <p className="mt-5 max-w-md text-base leading-7 text-[#f7f2e8]/64">
-                The release now tells a tighter story: live trial first, shared
-                system view second, then the operator workflow that proves Beacon
-                is more than a static front-end exercise.
-              </p>
-              <div className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/10 bg-[#121212]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,191,107,0.12),_transparent_46%)]" />
-                <div className="relative aspect-[4/5]">
-                  <Image
-                    src="/beacon/dashboard.png"
-                    alt="Beacon dashboard overview"
-                    fill
-                    sizes="(min-width: 1024px) 24rem, 90vw"
-                    className="object-cover object-left-top"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-10">
-              {workflowSteps.map((step) => (
-                <article
-                  key={step.index}
-                  className="group relative border-l border-white/10 pl-7"
-                >
-                  <div className="absolute left-[-0.48rem] top-1 size-4 rounded-full border border-[#ffbf6b]/55 bg-[#090909] shadow-[0_0_0_6px_rgba(9,9,9,1)] transition-colors duration-300 group-hover:border-[#ffbf6b]" />
-                  <p className="text-xs uppercase tracking-[0.35em] text-[#ffbf6b]/82">
-                    {step.index}
-                  </p>
-                  <h3 className="mt-4 font-display text-3xl leading-tight tracking-[-0.03em] text-[#f7f2e8]">
-                    {step.title}
-                  </h3>
-                  <p className="mt-4 max-w-xl text-base leading-7 text-[#f7f2e8]/66">
-                    {step.body}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+        <LandingInteractiveSections publicDemoMode={publicDemoMode} />
 
         <section className="relative border-t border-white/8 py-20 sm:py-24">
           <div className="mx-auto max-w-5xl px-5 sm:px-8 lg:px-10">
@@ -429,47 +266,6 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="relative border-t border-white/8 bg-[#080808]/96">
-        <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10 lg:py-12">
-          <div className="flex flex-col gap-6 border-t border-white/6 pt-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-[0.68rem] uppercase tracking-[0.34em] text-[#ffbf6b]/58">
-                Built by {creatorProfile.name}
-              </p>
-              <p className="mt-3 text-sm leading-6 text-[#f7f2e8]/50 sm:text-[0.95rem]">
-                {creatorProfile.bio}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 text-sm text-[#f7f2e8]/42 lg:items-end">
-              <div className="flex flex-wrap gap-x-4 gap-y-2">
-                {creatorProfile.links.map((link) => {
-                  const isInternal = link.href.startsWith("/");
-                  const className =
-                    "transition-colors hover:text-[#f7f2e8]/72";
-
-                  return isInternal ? (
-                    <Link key={link.label} href={link.href} className={className}>
-                      {link.label}
-                    </Link>
-                  ) : (
-                    <a
-                      key={link.label}
-                      href={link.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={className}
-                    >
-                      {link.label}
-                    </a>
-                  );
-                })}
-              </div>
-              <p>© {new Date().getFullYear()} Beacon</p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
